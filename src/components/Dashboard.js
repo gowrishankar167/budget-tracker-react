@@ -1,5 +1,5 @@
 function Dashboard({ transactions }) {
-  const income  = transactions.filter(t => t.type === 'INCOME') .reduce((s, t) => s + t.amount, 0);
+  const income  = transactions.filter(t => t.type === 'INCOME').reduce((s, t) => s + t.amount, 0);
   const expense = transactions.filter(t => t.type === 'EXPENSE').reduce((s, t) => s + t.amount, 0);
   const balance = income - expense;
   const savings = income > 0 ? Math.round((balance / income) * 100) : 0;
