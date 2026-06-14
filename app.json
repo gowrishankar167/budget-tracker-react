@@ -1,0 +1,12 @@
+{
+  "expo": {
+    "extra": {
+      "eas": {
+        "projectId": "4ac3f351-e0de-4a5f-97cb-5b08d3da03f6"
+      }
+    },
+    "android": {
+      "package": "com.gowrishankar167.budgettrackerreact"
+    }
+  }
+}
