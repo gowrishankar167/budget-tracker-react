@@ -1,86 +1,87 @@
 import { useState } from 'react';
-import { auth } from './firebase';
-import { createUserWithEmailAndPassword, signInWithEmailAndPassword } from 'firebase/auth';
+
+const API = 'https://budget-tracker-backend-dzjh.onrender.com/api/auth';
 
 function Login({ onLogin }) {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
   const [isRegister, setIsRegister] = useState(false);
-  const [error, setError] = useState('');
+  const [name,     setName]     = useState('');
+  const [email,    setEmail]    = useState('');
+  const [password, setPassword] = useState('');
+  const [msg,      setMsg]      = useState('');
+  const [loading,  setLoading]  = useState(false);
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setError('');
+  async function handleSubmit() {
+    if (!email || !password) { setMsg('Fill all fields'); return; }
+    if (isRegister && !name) { setMsg('Enter your name'); return; }
+    setLoading(true);
+    setMsg('');
+    const url  = isRegister ? `${API}/register` : `${API}/login`;
+    const body = isRegister ? { name, email, password } : { email, password };
     try {
-      if (isRegister) {
-        await createUserWithEmailAndPassword(auth, email, password);
-      } else {
-        await signInWithEmailAndPassword(auth, email, password);
-      }
-      onLogin();
+      const res  = await fetch(url, {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify(body)
+      });
+      const data = await res.json();
+      if (!res.ok) { setMsg(data.error || 'Something went wrong'); setLoading(false); return; }
+      localStorage.setItem('bt_token', data.token);
+      localStorage.setItem('bt_name',  data.name);
+      onLogin(data.token, data.name);
     } catch (err) {
-      setError(err.message);
+      setMsg('Server error. Try again.');
+      setLoading(false);
     }
-  };
+  }
 
   return (
-    <div style={{
-      minHeight: '100vh', backgroundColor: '#0f0f1a',
-      display: 'flex', alignItems: 'center', justifyContent: 'center'
-    }}>
-      <div style={{
-        backgroundColor: '#1a1a2e', padding: '40px',
-        borderRadius: '16px', width: '380px', border: '1px solid #2a2a3e'
-      }}>
-        <h2 style={{ color: '#a78bfa', textAlign: 'center', marginBottom: '8px' }}>
-          💰 BudgetTrack
-        </h2>
-        <p style={{ color: '#8b8fa8', textAlign: 'center', marginBottom: '32px' }}>
+    <div style={{display:'flex', alignItems:'center', justifyContent:'center',
+      minHeight:'100vh', background:'#0f1117'}}>
+      <div style={{background:'#1a1d27', border:'1px solid rgba(255,255,255,0.07)',
+        borderRadius:'16px', padding:'36px', width:'100%', maxWidth:'400px'}}>
+        <h1 style={{color:'#a78bfa', fontWeight:800, fontSize:'24px', marginBottom:'6px'}}>
+          budgettrack
+        </h1>
+        <p style={{color:'#8b8fa8', fontSize:'13px', marginBottom:'28px'}}>
           {isRegister ? 'Create your account' : 'Sign in to your account'}
         </p>
-
-        {error && (
-          <div style={{ backgroundColor: '#ff6b6b20', border: '1px solid #ff6b6b',
-            borderRadius: '8px', padding: '12px', marginBottom: '16px',
-            color: '#ff6b6b', fontSize: '14px' }}>
-            {error}
+        {isRegister && (
+          <div style={{marginBottom:'14px'}}>
+            <label style={{fontSize:'12px', color:'#8b8fa8', display:'block', marginBottom:'6px'}}>Name</label>
+            <input style={{width:'100%', padding:'10px 14px', background:'#22263a',
+              border:'1px solid rgba(255,255,255,0.08)', borderRadius:'10px',
+              color:'#f1f1f3', fontSize:'14px', outline:'none', boxSizing:'border-box'}}
+              placeholder="Your name" value={name} onChange={e => setName(e.target.value)}/>
           </div>
         )}
-
-        <form onSubmit={handleSubmit}>
-          <div style={{ marginBottom: '16px' }}>
-            <label style={{ color: '#8b8fa8', fontSize: '14px' }}>Email</label>
-            <input type="email" value={email} onChange={e => setEmail(e.target.value)}
-              required placeholder="you@example.com"
-              style={{ width: '100%', padding: '12px', marginTop: '6px',
-                backgroundColor: '#0f0f1a', border: '1px solid #2a2a3e',
-                borderRadius: '8px', color: '#fff', fontSize: '14px',
-                boxSizing: 'border-box' }} />
-          </div>
-
-          <div style={{ marginBottom: '24px' }}>
-            <label style={{ color: '#8b8fa8', fontSize: '14px' }}>Password</label>
-            <input type="password" value={password} onChange={e => setPassword(e.target.value)}
-              required placeholder="Min 6 characters"
-              style={{ width: '100%', padding: '12px', marginTop: '6px',
-                backgroundColor: '#0f0f1a', border: '1px solid #2a2a3e',
-                borderRadius: '8px', color: '#fff', fontSize: '14px',
-                boxSizing: 'border-box' }} />
-          </div>
-
-          <button type="submit" style={{
-            width: '100%', padding: '14px', backgroundColor: '#a78bfa',
-            border: 'none', borderRadius: '8px', color: '#000',
-            fontWeight: 'bold', fontSize: '16px', cursor: 'pointer'
-          }}>
-            {isRegister ? 'Create Account' : 'Sign In'}
-          </button>
-        </form>
-
-        <p style={{ color: '#8b8fa8', textAlign: 'center', marginTop: '20px', fontSize: '14px' }}>
-          {isRegister ? 'Already have an account?' : "Don't have an account?"}
-          <span onClick={() => setIsRegister(!isRegister)}
-            style={{ color: '#a78bfa', cursor: 'pointer', marginLeft: '6px' }}>
+        <div style={{marginBottom:'14px'}}>
+          <label style={{fontSize:'12px', color:'#8b8fa8', display:'block', marginBottom:'6px'}}>Email</label>
+          <input style={{width:'100%', padding:'10px 14px', background:'#22263a',
+            border:'1px solid rgba(255,255,255,0.08)', borderRadius:'10px',
+            color:'#f1f1f3', fontSize:'14px', outline:'none', boxSizing:'border-box'}}
+            type="email" placeholder="you@example.com" value={email}
+            onChange={e => setEmail(e.target.value)}/>
+        </div>
+        <div style={{marginBottom:'20px'}}>
+          <label style={{fontSize:'12px', color:'#8b8fa8', display:'block', marginBottom:'6px'}}>Password</label>
+          <input style={{width:'100%', padding:'10px 14px', background:'#22263a',
+            border:'1px solid rgba(255,255,255,0.08)', borderRadius:'10px',
+            color:'#f1f1f3', fontSize:'14px', outline:'none', boxSizing:'border-box'}}
+            type="password" placeholder="Min 6 characters" value={password}
+            onChange={e => setPassword(e.target.value)}
+            onKeyDown={e => e.key === 'Enter' && handleSubmit()}/>
+        </div>
+        {msg && <p style={{color:'#f87171', fontSize:'13px', marginBottom:'12px'}}>{msg}</p>}
+        <button onClick={handleSubmit} disabled={loading}
+          style={{width:'100%', padding:'13px', background:'#6c63ff', color:'#fff',
+            border:'none', borderRadius:'10px', fontSize:'15px', fontWeight:600,
+            cursor:'pointer', marginBottom:'16px', opacity: loading ? 0.7 : 1}}>
+          {loading ? 'Please wait...' : isRegister ? 'Create Account' : 'Sign In'}
+        </button>
+        <p style={{textAlign:'center', fontSize:'13px', color:'#8b8fa8'}}>
+          {isRegister ? 'Already have an account? ' : "Don't have an account? "}
+          <span onClick={() => { setIsRegister(!isRegister); setMsg(''); }}
+            style={{color:'#a78bfa', cursor:'pointer', fontWeight:600}}>
             {isRegister ? 'Sign In' : 'Register'}
           </span>
         </p>
